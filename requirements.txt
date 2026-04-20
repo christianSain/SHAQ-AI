@@ -1,4 +1,5 @@
-streamlit
+fastapi
+uvicorn
 yfinance
 numpy
 pandas
