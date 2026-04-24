@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHAQ AI — Token Market</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Source+Code+Pro:wght@600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --gold: #FFD700; --dark: #060918; --darker: #0a0e27; }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, sans-serif; color: #fff;
+    background: radial-gradient(ellipse at top, rgba(255,215,0,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(100,50,200,0.1) 0%, transparent 50%),
+      linear-gradient(180deg, var(--dark) 0%, #0f0a1e 50%, var(--darker) 100%);
+    min-height: 100vh; padding-bottom: 50px; overflow-x: hidden;
+  }
+
+  /* TOP BAR */
+  .topbar { display:flex; justify-content:space-between; align-items:center; padding:10px 24px; border-bottom:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.4); backdrop-filter:blur(10px); position:sticky; top:0; z-index:100; }
+  .topbar-left { display:flex; align-items:center; gap:10px; }
+  .topbar-logo { font-family:'Oswald',Impact,sans-serif; font-size:24px; font-weight:700; letter-spacing:5px; background:linear-gradient(90deg,#FFD700,#FFA500,#FFD700); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .topbar-sub { color:rgba(255,255,255,0.25); font-size:11px; letter-spacing:4px; }
+  .topbar-right { display:flex; align-items:center; gap:16px; text-align:right; }
+  .market-status { font-size:9px; letter-spacing:3px; }
+  .market-status.open { color:#7BED9F; }
+  .market-status.closed { color:#FF4757; }
+  .market-timer { font-family:'Source Code Pro',monospace; font-size:20px; font-weight:700; color:var(--gold); letter-spacing:2px; text-shadow:0 0 10px rgba(255,215,0,0.3); }
+  .market-label { font-size:9px; letter-spacing:2px; color:#a0aec0; }
+  .topbar-tag { font-size:9px; letter-spacing:3px; color:#4a5568; }
+
+  .container { max-width:1300px; margin:0 auto; padding:0 20px; }
+
+  /* FEATURED PACK */
+  .stage { display:flex; flex-direction:column; align-items:center; padding:50px 0 30px; background:radial-gradient(ellipse at center top,rgba(255,255,255,0.03),transparent 60%); }
+  .featured-pack { width:250px; height:370px; border-radius:18px; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:28px 20px; box-shadow:0 40px 80px rgba(0,0,0,0.9),inset 0 2px 0 rgba(255,255,255,0.35); transform:perspective(1200px) rotateX(5deg) rotateY(-3deg); animation:packFloat 4s ease-in-out infinite; transition:all 0.5s; }
+  .featured-pack::before { content:''; position:absolute; top:0; left:0; right:0; height:35%; background:linear-gradient(180deg,rgba(255,255,255,0.2) 0%,transparent 100%); border-radius:18px 18px 0 0; pointer-events:none; }
+  .fp-header { font-family:'Oswald',Impact,sans-serif; font-size:22px; letter-spacing:5px; color:rgba(255,255,255,0.85); position:relative; z-index:2; }
+  .fp-emoji { font-size:80px; position:relative; z-index:2; }
+  .fp-name { font-family:'Oswald',Impact,sans-serif; font-size:22px; letter-spacing:2px; color:#fff; text-align:center; position:relative; z-index:2; }
+  .fp-rarity { font-size:11px; letter-spacing:5px; margin-top:4px; position:relative; z-index:2; }
+  @keyframes packFloat { 0%,100%{transform:perspective(1200px) rotateX(5deg) rotateY(-3deg) translateY(0)} 50%{transform:perspective(1200px) rotateX(5deg) rotateY(-3deg) translateY(-14px)} }
+
+  /* INFO BANNER */
+  .info-banner { padding:16px 24px; display:flex; justify-content:space-between; align-items:center; margin:0 0 20px; transition:all 0.5s; }
+  .ib-name { font-family:'Oswald',Impact,sans-serif; font-size:20px; letter-spacing:2px; text-transform:uppercase; }
+  .ib-desc { color:#a0aec0; font-size:13px; margin-top:2px; }
+  .ib-timer-label { font-size:9px; letter-spacing:3px; color:#a0aec0; }
+  .ib-timer { font-family:'Source Code Pro',monospace; font-size:22px; font-weight:700; letter-spacing:2px; }
+
+  /* SEARCH */
+  .search-section { text-align:center; margin-bottom:24px; }
+  .search-hint { font-size:11px; letter-spacing:4px; color:#4a5568; margin-bottom:10px; }
+  .search-row { display:flex; gap:8px; max-width:500px; margin:0 auto; }
+  .search-input { flex:1; background:rgba(0,0,0,0.5); color:#fff; border:2px solid rgba(255,215,0,0.3); border-radius:30px; padding:14px 24px; font-size:16px; text-align:center; letter-spacing:4px; font-weight:700; outline:none; text-transform:uppercase; transition:border-color 0.3s; }
+  .search-input:focus { border-color:var(--gold); }
+  .search-input::placeholder { color:rgba(255,255,255,0.25); text-transform:uppercase; }
+  .search-btn { background:linear-gradient(135deg,rgba(255,215,0,0.25),rgba(255,165,0,0.15)); color:#fff; border:2px solid rgba(255,215,0,0.4); border-radius:30px; padding:14px 28px; font-weight:800; letter-spacing:2px; cursor:pointer; font-size:14px; transition:all 0.3s; }
+  .search-btn:hover { background:linear-gradient(135deg,rgba(255,215,0,0.4),rgba(255,165,0,0.3)); border-color:var(--gold); }
+  .search-btn:disabled { opacity:0.5; cursor:not-allowed; }
+  .error-msg { color:#FF4757; margin-top:10px; font-size:13px; }
+
+  /* SETTINGS */
+  .settings { display:flex; gap:12px; justify-content:center; margin-bottom:28px; }
+  .settings select { background:rgba(0,0,0,0.4); color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:8px 14px; font-size:12px; letter-spacing:1px; cursor:pointer; outline:none; }
+
+  /* PACK GRID */
+  .pack-label { text-align:center; font-size:11px; letter-spacing:4px; color:#4a5568; margin-bottom:14px; }
+  .pack-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:40px; }
+  @media(max-width:900px){.pack-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:550px){.pack-grid{grid-template-columns:repeat(2,1fr)}}
+  .pack-tile { position:relative; cursor:pointer; height:170px; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:12px 8px; overflow:visible; border:2px solid rgba(255,255,255,0.1); box-shadow:0 8px 20px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.15); transform:perspective(800px) rotateX(6deg); transition:all 0.35s cubic-bezier(0.4,0,0.2,1); }
+  .pack-tile::before { content:''; position:absolute; top:0; left:0; right:0; height:45%; background:linear-gradient(180deg,rgba(255,255,255,0.18) 0%,transparent 100%); border-radius:14px 14px 0 0; pointer-events:none; }
+  .pack-tile:hover { transform:perspective(800px) rotateX(0deg) translateY(-8px) scale(1.04); box-shadow:0 20px 35px rgba(0,0,0,0.7); }
+  .pack-tile.selected { transform:perspective(800px) rotateX(0deg) translateY(-6px) scale(1.06); }
+  .pack-tile .info-dot { position:absolute; top:6px; right:8px; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.4); display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; font-style:italic; font-family:serif; cursor:pointer; z-index:10; transition:all 0.2s; }
+  .pack-tile .info-dot:hover { background:rgba(255,255,255,0.2); border-color:#fff; transform:scale(1.15); }
+  .pack-tile .stock-popup { display:none; position:absolute; top:32px; right:4px; background:rgba(10,14,39,0.95); border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:10px 12px; z-index:20; min-width:180px; max-width:220px; max-height:200px; overflow-y:auto; backdrop-filter:blur(10px); box-shadow:0 10px 30px rgba(0,0,0,0.8); animation:fadeUp 0.2s ease; }
+  .pack-tile .stock-popup.visible { display:block; }
+  .stock-popup-title { font-size:9px; letter-spacing:2px; color:#a0aec0; margin-bottom:6px; text-transform:uppercase; }
+  .stock-popup-list { display:flex; flex-wrap:wrap; gap:4px; }
+  .stock-popup-list span { font-size:10px; font-weight:700; letter-spacing:1px; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); cursor:pointer; transition:all 0.15s; }
+  .stock-popup-list span:hover { background:rgba(255,255,255,0.2); transform:scale(1.05); }
+  .pack-emoji { font-size:36px; position:relative; z-index:2; }
+  .pack-name { font-size:11px; font-weight:900; letter-spacing:1.5px; color:#fff; text-transform:uppercase; text-align:center; line-height:1.15; text-shadow:0 2px 4px rgba(0,0,0,0.9); position:relative; z-index:2; }
+  .pack-rarity { font-size:9px; letter-spacing:3px; font-weight:700; position:relative; z-index:2; }
+  .pack-timer { font-family:'Source Code Pro',monospace; font-size:12px; font-weight:700; color:var(--gold); letter-spacing:1px; margin-top:4px; text-shadow:0 0 6px rgba(255,215,0,0.5); background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:4px; position:relative; z-index:2; }
+
+  /* ANALYSIS */
+  .analysis { animation:fadeUp 0.5s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .back-btn { background:rgba(255,255,255,0.06); color:#a0aec0; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:8px 20px; cursor:pointer; font-size:13px; letter-spacing:1px; margin-bottom:16px; transition:all 0.3s; }
+  .back-btn:hover { background:rgba(255,255,255,0.1); color:#fff; }
+  .sector-badge { text-align:center; padding:10px 0 6px; letter-spacing:5px; font-size:12px; font-weight:700; }
+  .target-hero { border-radius:16px; padding:36px 24px; text-align:center; margin:16px 0 24px; }
+  .target-label { letter-spacing:4px; font-size:11px; }
+  .target-ticker { font-size:64px; font-weight:900; font-family:'Oswald',Impact,sans-serif; letter-spacing:4px; color:#fff; }
+  .target-sector { color:#a0aec0; letter-spacing:2px; font-size:12px; }
+  .metrics-row { display:flex; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+  .metric-card { background:rgba(255,255,255,0.04); border-radius:12px; padding:16px 12px; text-align:center; flex:1; min-width:120px; }
+  .metric-label { font-size:11px; color:#a0aec0; letter-spacing:2px; text-transform:uppercase; margin-bottom:6px; }
+  .metric-value { font-size:26px; font-weight:900; color:#fff; font-family:'Source Code Pro',monospace; }
+  .analysis-meta { font-size:11px; color:#4a5568; text-align:center; margin-bottom:24px; letter-spacing:1px; }
+  .analysis-meta b { color:#a0aec0; }
+  .tables-row { display:flex; gap:20px; flex-wrap:wrap; margin-bottom:30px; }
+  .table-section { flex:1; min-width:280px; }
+  .table-title { font-size:15px; letter-spacing:2px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .table-count { color:#a0aec0; font-weight:400; font-size:14px; }
+  .table-empty { color:#4a5568; font-size:13px; padding:20px 0; text-align:center; border:1px dashed rgba(255,255,255,0.1); border-radius:8px; }
+  .data-table { width:100%; border-collapse:collapse; font-size:12px; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); }
+  .data-table th { padding:10px 8px; text-align:right; color:#a0aec0; font-weight:600; letter-spacing:1px; font-size:10px; background:rgba(255,255,255,0.05); }
+  .data-table th:first-child { text-align:left; }
+  .data-table td { padding:8px; text-align:right; color:#fff; border-bottom:1px solid rgba(255,255,255,0.04); }
+  .data-table td:first-child { text-align:left; font-weight:800; letter-spacing:1px; }
+  .data-table tr:nth-child(even) { background:rgba(0,0,0,0.2); }
+
+  /* MARQUEE */
+  .marquee { position:fixed; bottom:0; left:0; right:0; background:rgba(0,0,0,0.92); border-top:2px solid var(--gold); padding:8px 0; overflow:hidden; z-index:1000; }
+  .marquee-track { display:inline-block; white-space:nowrap; animation:marqueeScroll 160s linear infinite; color:var(--gold); font-size:12px; letter-spacing:1px; font-weight:600; }
+  @keyframes marqueeScroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  /* ===== LOADING — SVG SILHOUETTE POSTER DUNK ===== */
+  .loading-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(6,9,24,0.97); z-index:999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(10px); }
+  .loading-overlay.visible { display:flex; }
+  .dunk-scene { position:relative; width:500px; height:320px; max-width:90vw; }
+  .dunk-svg { width:100%; height:100%; }
+  .slam-text { font-family:'Oswald',Impact,sans-serif; font-size:32px; letter-spacing:6px; margin-top:20px; text-align:center; animation:textPulse 1.5s ease-in-out infinite; }
+  .slam-sub { font-size:13px; letter-spacing:4px; color:#a0aec0; margin-top:8px; text-align:center; }
+  .slam-flavor { font-size:12px; letter-spacing:2px; color:#4a5568; margin-top:14px; text-align:center; font-style:italic; }
+  @keyframes textPulse { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.03)} }
+
+  /* HELP CHAT */
+  .help-btn { position:fixed; bottom:55px; right:20px; width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#FFD700,#FFA500); border:none; color:#000; font-size:24px; font-weight:900; cursor:pointer; z-index:1001; box-shadow:0 4px 15px rgba(255,215,0,0.4); display:flex; align-items:center; justify-content:center; transition:all 0.3s; font-family:serif; }
+  .help-btn:hover { transform:scale(1.1); box-shadow:0 4px 20px rgba(255,215,0,0.6); }
+  .chat-panel { display:none; position:fixed; bottom:55px; right:20px; width:360px; max-height:500px; z-index:1002; background:rgba(10,14,39,0.97); border:2px solid #FFD700; border-radius:16px; overflow:hidden; flex-direction:column; animation:fadeUp 0.3s ease; }
+  .chat-panel.visible { display:flex; }
+  .chat-header { background:linear-gradient(90deg,rgba(255,215,0,0.15),rgba(0,0,0,0.4)); padding:14px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,215,0,0.3); }
+  .chat-header-title { font-family:'Oswald',Impact,sans-serif; font-size:16px; letter-spacing:3px; color:#FFD700; }
+  .chat-close { background:none; border:none; color:#a0aec0; font-size:20px; cursor:pointer; }
+  .chat-close:hover { color:#fff; }
+  .chat-messages { flex:1; overflow-y:auto; padding:16px; max-height:340px; display:flex; flex-direction:column; gap:10px; }
+  .chat-msg { padding:10px 14px; border-radius:12px; font-size:13px; line-height:1.5; max-width:85%; }
+  .chat-msg.bot { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e0; align-self:flex-start; }
+  .chat-msg.user { background:rgba(255,215,0,0.15); border:1px solid rgba(255,215,0,0.3); color:#fff; align-self:flex-end; }
+  .chat-input-row { display:flex; gap:8px; padding:12px; border-top:1px solid rgba(255,255,255,0.08); }
+  .chat-input { flex:1; background:rgba(0,0,0,0.4); color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:10px 16px; font-size:13px; outline:none; }
+  .chat-input::placeholder { color:rgba(255,255,255,0.3); }
+  .chat-send { background:linear-gradient(135deg,#FFD700,#FFA500); border:none; color:#000; font-weight:800; border-radius:20px; padding:10px 16px; cursor:pointer; font-size:13px; letter-spacing:1px; }
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div style="width:300px;max-width:85vw;border-radius:16px;overflow:hidden;box-shadow:0 0 80px rgba(253,185,39,0.25);border:2px solid rgba(253,185,39,0.4);">
+    <video id="loadVideo" muted playsinline loop style="width:100%;display:block;border-radius:14px;">
+      <source src="https://raw.githubusercontent.com/christianSain/SHAQ-AI/main/video.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="slam-text" id="loadText" style="color:#FDB927;text-shadow:0 0 30px rgba(253,185,39,0.5)">ANALYZING</div>
+  <div class="slam-sub" id="loadSub">Pulling Yahoo Finance data...</div>
+  <div class="slam-flavor" id="loadFlavor"></div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span style="font-size:28px">🏀</span>
+    <span class="topbar-logo">SHAQ AI</span>
+    <span class="topbar-sub">TOKEN MARKET</span>
+  </div>
+  <div class="topbar-right">
+    <div>
+      <div id="marketStatus" class="market-status closed">○ MARKET CLOSED</div>
+      <div id="marketTimer" class="market-timer">--:--:--</div>
+      <div id="marketLabel" class="market-label">LOADING</div>
+    </div>
+    <div class="topbar-tag">FIN 440 · UTAMPA</div>
+  </div>
+</div>
+
+<!-- MARKET VIEW -->
+<div id="marketView" class="container">
+  <div class="stage">
+    <div id="featuredPack" class="featured-pack">
+      <div class="fp-header">SHAQ AI</div>
+      <div id="fpEmoji" class="fp-emoji">💻</div>
+      <div><div id="fpName" class="fp-name">TECHNOLOGY</div><div id="fpRarity" class="fp-rarity">DIAMOND</div></div>
+    </div>
+  </div>
+  <div id="infoBanner" class="info-banner">
+    <div><div id="ibName" class="ib-name">💻 TECHNOLOGY</div><div id="ibDesc" class="ib-desc">ETF: XLK · DIAMOND</div></div>
+    <div style="text-align:right"><div class="ib-timer-label">MARKET <span id="ibTimerLabel">OPENS IN</span></div><div id="ibTimer" class="ib-timer">--:--:--</div></div>
+  </div>
+  <div class="search-section">
+    <div class="search-hint">TYPE A TICKER TO RUN SHAQ ANALYSIS</div>
+    <div class="search-row">
+      <input id="tickerInput" class="search-input" placeholder="E.G. AAPL" autocomplete="off">
+      <button id="analyzeBtn" class="search-btn" onclick="runAnalysis()">ANALYZE</button>
+    </div>
+    <div id="errorMsg" class="error-msg" style="display:none"></div>
+  </div>
+  <div class="settings">
+    <select id="modeSelect"><option value="sigma">σ Markowitz</option><option value="beta">β CAPM</option></select>
+    <select id="lookbackSelect"><option value="6mo">6 Months</option><option value="1y" selected>1 Year</option><option value="2y">2 Years</option><option value="5y">5 Years</option></select>
+  </div>
+  <div class="pack-label">SELECT A PACK</div>
+  <div id="packGrid" class="pack-grid"></div>
+</div>
+
+<!-- ANALYSIS VIEW -->
+<div id="analysisView" class="container analysis" style="display:none"></div>
+
+<!-- MARQUEE -->
+<div class="marquee"><div id="marqueeTrack" class="marquee-track"></div></div>
+
+<!-- HELP CHAT -->
+<button class="help-btn" id="helpBtn" onclick="toggleChat()">?</button>
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header"><div class="chat-header-title">🏀 SHAQ ASSIST</div><button class="chat-close" onclick="toggleChat()">✕</button></div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg bot">Welcome to SHAQ AI! Ask me about dominance analysis, metrics (Sharpe, Beta, Sigma), how to use SHAQ, or where the data comes from.</div>
+  </div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chatInput" placeholder="Ask a question..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-send" onclick="sendChat()">SEND</button>
+  </div>
+</div>
+
+<script>
+const API_URL = window.location.origin;
+
+const SECTORS = [
+  {name:"Technology",emoji:"💻",color:"#00D4FF",rarity:"DIAMOND",etf:"XLK",tag:"Tech titans, chipmakers, cloud giants"},
+  {name:"Financial Services",emoji:"🏦",color:"#FFD700",rarity:"GOLD",etf:"XLF",tag:"Big banks, payment networks, asset managers"},
+  {name:"Healthcare",emoji:"⚕️",color:"#FF4757",rarity:"RUBY",etf:"XLV",tag:"Pharma, biotech, medical devices"},
+  {name:"Consumer Discretionary",emoji:"🛍️",color:"#FF6B9D",rarity:"PINK DIAMOND",etf:"XLY",tag:"Retail, autos, travel, luxury"},
+  {name:"Consumer Staples",emoji:"🛒",color:"#7BED9F",rarity:"EMERALD",etf:"XLP",tag:"Food, beverages, household"},
+  {name:"Energy",emoji:"⛽",color:"#FFA502",rarity:"AMBER",etf:"XLE",tag:"Oil majors, drillers, pipelines"},
+  {name:"Industrials",emoji:"🏗️",color:"#A4B0BE",rarity:"SILVER",etf:"XLI",tag:"Aerospace, machinery, defense"},
+  {name:"Utilities",emoji:"⚡",color:"#70A1FF",rarity:"SAPPHIRE",etf:"XLU",tag:"Electric, gas, water"},
+  {name:"Real Estate",emoji:"🏢",color:"#A55EEA",rarity:"AMETHYST",etf:"XLRE",tag:"REITs, logistics, towers"},
+  {name:"Materials",emoji:"⛏️",color:"#CD7F32",rarity:"BRONZE",etf:"XLB",tag:"Chemicals, metals, mining"},
+  {name:"Communication Services",emoji:"📡",color:"#FF6348",rarity:"ONYX",etf:"XLC",tag:"Media, telecom, social"},
+  {name:"ETFs & Indexes",emoji:"📊",color:"#E8E8E8",rarity:"PLATINUM",etf:"ETF",tag:"Broad-market ETFs and indexes"},
+];
+
+const SECTOR_STOCKS = {
+  XLK:["AAPL","MSFT","NVDA","AVGO","ORCL","CRM","CSCO","ACN","IBM","AMD","INTC","QCOM","ADBE","TXN","NOW","INTU","PLTR","MU","AMAT","ADI"],
+  XLF:["JPM","BRK-B","V","MA","BAC","WFC","GS","MS","AXP","C","SCHW","BLK","SPGI","PGR","CB","MMC","USB","PNC","TFC","COF"],
+  XLV:["LLY","UNH","JNJ","ABBV","MRK","TMO","ABT","ISRG","DHR","AMGN","PFE","BSX","SYK","GILD","VRTX","REGN","MDT","BMY","ELV","CI"],
+  XLY:["AMZN","TSLA","HD","MCD","BKNG","LOW","TJX","SBUX","NKE","CMG","ORLY","ABNB","MAR","AZO","GM","F","HLT","DHI","LEN","ROST"],
+  XLP:["COST","WMT","PG","KO","PEP","PM","MO","MDLZ","TGT","CL","KMB","GIS","SYY","KR","KVUE","ADM","STZ","HSY","KHC","CHD"],
+  XLE:["XOM","CVX","COP","WMB","EOG","OXY","SLB","PSX","MPC","VLO","KMI","HES","BKR","FANG","HAL","DVN","TRGP","OKE","CTRA","APA"],
+  XLI:["GE","CAT","RTX","HON","UBER","UNP","ETN","BA","LMT","DE","ADP","PH","TT","GD","NOC","CSX","WM","ITW","EMR","FDX"],
+  XLU:["NEE","SO","DUK","CEG","AEP","SRE","D","EXC","XEL","PCG","ED","PEG","VST","EIX","WEC","DTE","AEE","ETR","FE","AWK"],
+  XLRE:["PLD","AMT","EQIX","WELL","SPG","PSA","O","CCI","DLR","CBRE","EXR","VICI","AVB","IRM","EQR","SBAC","WY","MAA","ARE","VTR"],
+  XLB:["LIN","SHW","ECL","APD","FCX","NEM","DD","CTVA","NUE","DOW","PPG","MLM","VMC","IFF","LYB","STLD","CF","PKG","IP","AVY"],
+  XLC:["META","GOOGL","GOOG","NFLX","DIS","TMUS","VZ","T","CMCSA","CHTR","EA","TTWO","WBD","OMC","FOXA","PARA","IPG","LYV","MTCH","FOX"],
+  ETF:["SPY","QQQ","IWM","DIA","VTI","VOO","VEA","VWO","IEFA","IEMG","AGG","BND","TLT","GLD","SLV","XLK","XLF","XLV","XLY","XLE"],
+};
+
+let selectedSector = SECTORS[0];
+let timerStr = "--:--:--";
+
+const SHAQ_LINES = ["SHAQ IS COOKING...","DROPPING DIMES ON DATA...","CAN'T STOP THE DIESEL...","KAZAAM! LOADING...","SHAQ ATTACK INCOMING...","BIG MAN IN THE PAINT...","HACK-A-SHAQ? NOPE...","POSTERIZING THE MARKET...","ANALYZING THE LANE...","GATHERING BOARDS..."];
+
+// TIMER
+function updateTimer(){
+  const now=new Date(),et=new Date(now.toLocaleString("en-US",{timeZone:"America/New_York"}));
+  const day=et.getDay(),h=et.getHours(),m=et.getMinutes(),mins=h*60+m;
+  let label,isOpen,target;
+  if(day>=1&&day<=5&&mins>=570&&mins<960){label="CLOSES IN";isOpen=true;target=new Date(et);target.setHours(16,0,0,0)}
+  else{label="OPENS IN";isOpen=false;target=new Date(et);if(mins>=960||day===0||day===6){let d=1;while(true){const c=new Date(et);c.setDate(c.getDate()+d);if(c.getDay()>=1&&c.getDay()<=5){target=c;break}d++}}target.setHours(9,30,0,0)}
+  const diff=Math.max(0,Math.floor((target-et)/1000));
+  timerStr=`${String(Math.floor(diff/3600)).padStart(2,'0')}:${String(Math.floor((diff%3600)/60)).padStart(2,'0')}:${String(diff%60).padStart(2,'0')}`;
+  document.getElementById('marketTimer').textContent=timerStr;
+  document.getElementById('marketLabel').textContent=label;
+  const s=document.getElementById('marketStatus');s.textContent=isOpen?"● MARKET OPEN":"○ MARKET CLOSED";s.className="market-status "+(isOpen?"open":"closed");
+  document.getElementById('ibTimerLabel').textContent=label;
+  document.getElementById('ibTimer').textContent=timerStr;
+  document.getElementById('ibTimer').style.color=selectedSector.color;
+  document.querySelectorAll('.pack-timer').forEach(el=>el.textContent=timerStr);
+}
+setInterval(updateTimer,1000);updateTimer();
+
+// MARQUEE
+(function(){const u=["spartan23","tampaballer","coleG","courtside_kid","alpha_dog","buzzerbeater","fadeaway","BPM_king","diamondhands","draftnight"],v=["just analyzed","pulled","ran SHAQ on","compared","dominated with"];let items=[];for(let i=0;i<30;i++){items.push(`@${u[Math.floor(Math.random()*u.length)]} ${v[Math.floor(Math.random()*v.length)]} from ${SECTORS[Math.floor(Math.random()*SECTORS.length)].name} pack`)}const t="🏀 RECENT SHAQ PULLS  ·  "+items.join("  •  ");document.getElementById('marqueeTrack').textContent=t+"  ·  "+t})();
+
+// PACK GRID
+function selectSector(i){
+  selectedSector=SECTORS[i];const c=selectedSector.color;
+  document.getElementById('fpEmoji').textContent=selectedSector.emoji;
+  document.getElementById('fpEmoji').style.filter=`drop-shadow(0 4px 20px ${c})`;
+  document.getElementById('fpName').textContent=selectedSector.name.toUpperCase();
+  document.getElementById('fpName').style.textShadow=`0 0 20px ${c}`;
+  document.getElementById('fpRarity').textContent=selectedSector.rarity;
+  document.getElementById('fpRarity').style.color=c;
+  const fp=document.getElementById('featuredPack');
+  fp.style.background=`linear-gradient(150deg,${c}55 0%,rgba(0,0,0,0.85) 55%,#000 100%)`;
+  fp.style.border=`3px solid ${c}`;fp.style.boxShadow=`0 40px 80px rgba(0,0,0,0.9),0 0 100px ${c}44`;
+  document.getElementById('ibName').textContent=`${selectedSector.emoji} ${selectedSector.name.toUpperCase()}`;
+  document.getElementById('ibDesc').textContent=`${selectedSector.tag} · ETF: ${selectedSector.etf} · ${selectedSector.rarity}`;
+  const ib=document.getElementById('infoBanner');ib.style.background=`linear-gradient(90deg,rgba(0,0,0,0.7),${c}15,rgba(0,0,0,0.7))`;ib.style.borderTop=`2px solid ${c}55`;ib.style.borderBottom=`2px solid ${c}55`;
+  document.getElementById('tickerInput').style.borderColor=`${c}55`;
+  document.querySelectorAll('.pack-tile').forEach((t,j)=>{const s=SECTORS[j];if(j===i){t.classList.add('selected');t.style.border=`3px solid ${s.color}`;t.style.boxShadow=`0 0 40px ${s.color}66,0 15px 30px rgba(0,0,0,0.8)`}else{t.classList.remove('selected');t.style.border='2px solid rgba(255,255,255,0.1)';t.style.boxShadow='0 8px 20px rgba(0,0,0,0.6)'}});
+}
+function buildPackGrid(){
+  const grid=document.getElementById('packGrid');grid.innerHTML='';
+  SECTORS.forEach((s,i)=>{
+    const tile=document.createElement('div');tile.className='pack-tile'+(i===0?' selected':'');
+    tile.style.background=`linear-gradient(145deg,${s.color}44 0%,#0a0e2799 50%,#000000cc 100%)`;
+    if(i===0){tile.style.border=`3px solid ${s.color}`;tile.style.boxShadow=`0 0 40px ${s.color}66,0 15px 30px rgba(0,0,0,0.8)`}
+    tile.onclick=e=>{if(e.target.closest('.info-dot')||e.target.closest('.stock-popup'))return;selectSector(i)};
+    const stocks=SECTOR_STOCKS[s.etf]||[];
+    const spans=stocks.map(t=>`<span style="color:${s.color}" onclick="event.stopPropagation();document.getElementById('tickerInput').value='${t}';runAnalysis();">${t}</span>`).join('');
+    tile.innerHTML=`<div class="info-dot" onclick="event.stopPropagation();togglePopup(${i})">i</div><div class="stock-popup" id="popup-${i}"><div class="stock-popup-title">${s.name} · ${stocks.length} stocks</div><div class="stock-popup-list">${spans}</div></div><div class="pack-emoji" style="filter:drop-shadow(0 2px 8px ${s.color}88)">${s.emoji}</div><div class="pack-name">${s.name}</div><div class="pack-rarity" style="color:${s.color};text-shadow:0 0 8px ${s.color}88">${s.rarity}</div><div class="pack-timer">${timerStr}</div>`;
+    grid.appendChild(tile);
+  });
+}
+function togglePopup(i){document.querySelectorAll('.stock-popup').forEach((p,j)=>{if(j!==i)p.classList.remove('visible')});document.getElementById('popup-'+i).classList.toggle('visible')}
+document.addEventListener('click',e=>{if(!e.target.closest('.info-dot')&&!e.target.closest('.stock-popup'))document.querySelectorAll('.stock-popup').forEach(p=>p.classList.remove('visible'))});
+buildPackGrid();
+
+// LOADING
+function showLoading(ticker){
+  document.getElementById('loadText').textContent=ticker;
+  document.getElementById('loadFlavor').textContent=SHAQ_LINES[Math.floor(Math.random()*SHAQ_LINES.length)];
+  const vid=document.getElementById('loadVideo');
+  vid.currentTime=2;
+  vid.play().catch(()=>{});
+  document.getElementById('loadingOverlay').classList.add('visible');
+}
+function hideLoading(){
+  document.getElementById('loadingOverlay').classList.remove('visible');
+  document.getElementById('loadVideo').pause();
+}
+
+// ANALYZE
+document.getElementById('tickerInput').addEventListener('keydown',e=>{if(e.key==='Enter')runAnalysis()});
+async function runAnalysis(){
+  const ticker=document.getElementById('tickerInput').value.trim().toUpperCase();if(!ticker)return;
+  const btn=document.getElementById('analyzeBtn'),errEl=document.getElementById('errorMsg');
+  btn.disabled=true;btn.textContent="...";errEl.style.display="none";showLoading(ticker);
+  try{
+    const res=await fetch(`${API_URL}/analyze`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ticker,mode:document.getElementById('modeSelect').value,lookback:document.getElementById('lookbackSelect').value,n_peers:15})});
+    if(!res.ok){const err=await res.json();throw new Error(err.detail||"Analysis failed")}
+    const data=await res.json();hideLoading();showAnalysis(data);
+  }catch(e){hideLoading();errEl.textContent=e.message;errEl.style.display="block"}
+  finally{btn.disabled=false;btn.textContent="ANALYZE"}
+}
+
+function pct(v){return v!=null?(v*100).toFixed(2)+"%":"—"}
+function dec(v){return v!=null?v.toFixed(2):"—"}
+function money(v){if(v==null)return"—";if(v>=1e12)return"$"+(v/1e12).toFixed(2)+"T";if(v>=1e9)return"$"+(v/1e9).toFixed(2)+"B";if(v>=1e6)return"$"+(v/1e6).toFixed(2)+"M";return"$"+v.toLocaleString()}
+function vol(v){if(v==null)return"—";if(v>=1e6)return(v/1e6).toFixed(2)+"M";if(v>=1e3)return(v/1e3).toFixed(1)+"K";return v.toLocaleString()}
+
+function buildTable(stocks,color){
+  if(stocks.length===0)return'<div class="table-empty">No stocks in this category</div>';
+  let h='<table class="data-table"><thead><tr><th style="text-align:left">Ticker</th><th>E[R]</th><th>σ</th><th>β</th><th>Sharpe</th><th>α</th></tr></thead><tbody>';
+  stocks.forEach(s=>{h+=`<tr><td style="color:${color}">${s.ticker}</td><td>${pct(s.expected_return)}</td><td>${pct(s.sigma)}</td><td>${dec(s.beta)}</td><td>${dec(s.sharpe)}</td><td>${pct(s.alpha)}</td></tr>`});
+  return h+"</tbody></table>";
+}
+
+function showAnalysis(data){
+  const c=data.sector.color,d=data.details||{};
+  document.getElementById('marketView').style.display='none';
+  const av=document.getElementById('analysisView');av.style.display='block';
+  const divYield=d.dividend_yield?(d.dividend_yield*100).toFixed(2)+"%":"—";
+  av.innerHTML=`
+    <button class="back-btn" onclick="backToMarket()">← BACK TO MARKET</button>
+    <div class="sector-badge" style="color:${c};background:linear-gradient(90deg,transparent,${c}15,transparent);">${data.sector.emoji} ${data.sector.name.toUpperCase()} · ${data.sector.rarity} · ETF: ${data.sector.etf}</div>
+    <div class="target-hero" style="background:linear-gradient(135deg,${c}30,transparent);border:3px solid ${c};box-shadow:0 0 60px ${c}33;">
+      <div class="target-label" style="color:${c}">⭐ TARGET STOCK ⭐</div>
+      <div class="target-ticker" style="text-shadow:0 0 30px ${c}44">${data.target.ticker}</div>
+      <div style="color:#a0aec0;font-size:14px;letter-spacing:1px;margin-top:4px">${d.company_name||''}</div>
+      <div class="target-sector">${data.sector.name.toUpperCase()}</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">Price</div><div class="metric-value">$${d.price||'—'}</div></div>
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">Market Cap</div><div class="metric-value">${money(d.market_cap)}</div></div>
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">P/E Ratio</div><div class="metric-value">${d.pe_ratio||'—'}</div></div>
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">Dividend Yield</div><div class="metric-value">${divYield}</div></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">52-Week Low</div><div class="metric-value">$${d.week52_low||'—'}</div></div>
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">52-Week High</div><div class="metric-value">$${d.week52_high||'—'}</div></div>
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">Avg Volume</div><div class="metric-value">${vol(d.avg_volume)}</div></div>
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">Shares Out</div><div class="metric-value">${vol(d.shares_outstanding)}</div></div>
+    </div>
+    <div style="text-align:center;margin:28px 0 14px"><div style="font-family:'Oswald',Impact,sans-serif;font-size:24px;letter-spacing:6px;color:#FFD700;text-shadow:0 0 20px rgba(255,215,0,0.3)">🏀 SHAQ DOMINANCE METRICS</div><div style="width:80px;height:3px;background:linear-gradient(90deg,transparent,#FFD700,transparent);margin:8px auto 0"></div></div>
+    <div class="metrics-row">
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">Expected Return</div><div class="metric-value">${pct(data.target.expected_return)}</div></div>
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">Sigma (σ)</div><div class="metric-value">${pct(data.target.sigma)}</div></div>
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">Beta (β)</div><div class="metric-value">${dec(data.target.beta)}</div></div>
+      <div class="metric-card" style="border:1px solid ${c}44"><div class="metric-label">Sharpe</div><div class="metric-value">${dec(data.target.sharpe)}</div></div>
+    </div>
+    <div class="analysis-meta">Mode: <b>${data.mode==='sigma'?'σ Markowitz':'β CAPM'}</b> · Lookback: <b>${data.lookback}</b> · Benchmark: <b>${data.benchmark}</b> · Risk-free: <b>${pct(data.risk_free_rate)}</b> · Data: Yahoo Finance</div>
+    <div class="tables-row">
+      <div class="table-section"><div class="table-title">🟢 MORE DOMINANT <span class="table-count">(${data.more_dominant.length})</span></div>${buildTable(data.more_dominant,"#7BED9F")}</div>
+      <div class="table-section"><div class="table-title">⚪ NON-COMPARABLE <span class="table-count">(${data.non_comparable.length})</span></div>${buildTable(data.non_comparable,"#a0aec0")}</div>
+      <div class="table-section"><div class="table-title">🔴 LESS DOMINANT <span class="table-count">(${data.less_dominant.length})</span></div>${buildTable(data.less_dominant,"#FF4757")}</div>
+    </div>
+    <div style="text-align:center;margin-bottom:40px">
+      <div style="font-size:11px;letter-spacing:3px;color:#4a5568;margin-bottom:10px">RUN ANOTHER ANALYSIS</div>
+      <div style="display:flex;gap:8px;max-width:400px;margin:0 auto">
+        <input id="tickerInput2" class="search-input" placeholder="TICKER" style="border-color:${c}55" onkeydown="if(event.key==='Enter')runAnalysis2()">
+        <button class="search-btn" onclick="runAnalysis2()" style="border-color:${c}66;background:linear-gradient(135deg,${c}33,${c}18)">GO</button>
+      </div>
+      <div id="errorMsg2" class="error-msg" style="display:none"></div>
+    </div>`;
+}
+
+async function runAnalysis2(){
+  const ticker=document.getElementById('tickerInput2').value.trim().toUpperCase();if(!ticker)return;
+  document.getElementById('tickerInput').value=ticker;showLoading(ticker);
+  const errEl=document.getElementById('errorMsg2');errEl.style.display="none";
+  try{
+    const res=await fetch(`${API_URL}/analyze`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ticker,mode:document.getElementById('modeSelect').value,lookback:document.getElementById('lookbackSelect').value,n_peers:15})});
+    if(!res.ok){const err=await res.json();throw new Error(err.detail||"Failed")}
+    const data=await res.json();hideLoading();showAnalysis(data);window.scrollTo(0,0);
+  }catch(e){hideLoading();errEl.textContent=e.message;errEl.style.display="block"}
+}
+
+function backToMarket(){document.getElementById('analysisView').style.display='none';document.getElementById('marketView').style.display='block';window.scrollTo(0,0)}
+
+// HELP CHAT
+function toggleChat(){const p=document.getElementById('chatPanel'),b=document.getElementById('helpBtn');p.classList.toggle('visible');b.style.display=p.classList.contains('visible')?'none':'flex'}
+const KB={"dominance":"Stock A dominates B if A has equal-or-higher return AND equal-or-lower risk, with at least one strictly better. This is Pareto dominance from Markowitz portfolio theory.","more dominant":"Stocks that beat the target on return while having equal or lower risk. Objectively better risk-return tradeoffs.","less dominant":"Stocks the target beat — target has better return-risk tradeoff.","non-comparable":"Different risk-return profile — higher return but higher risk, or lower both. Neither dominates. Different frontier points.","sigma":"Sigma (σ) = annualized standard deviation of daily log returns. Measures total risk/volatility. From Yahoo Finance adjusted close prices.","beta":"Beta = stock's sensitivity to market (SPY). Pulled directly from Yahoo Finance's pre-computed 5-year monthly beta.","sharpe":"Sharpe = (Expected Return - Risk-Free Rate) / Sigma. Return per unit of total risk. Higher = better.","expected return":"Annualized mean of daily log returns over the lookback period. Computed from Yahoo Finance adjusted close prices.","alpha":"Jensen's Alpha = actual return minus CAPM-predicted return. Positive = beat expectations.","risk free":"Risk-free rate = current 3-month US Treasury Bill yield. Pulled live from Yahoo Finance ticker ^IRX.","data":"ALL data from Yahoo Finance: prices, beta, market cap, P/E, dividends, 52-week range. Risk-free rate from ^IRX. SHAQ computes expected return, sigma, Sharpe, Treynor, Alpha from Yahoo's price data.","sector":"SHAQ auto-detects sector via Yahoo Finance and compares against top 20 holdings of matching SPDR sector ETF.","how":"1) Select a sector pack or type a ticker. 2) Click ANALYZE. 3) SHAQ detects sector, pulls Yahoo data, classifies peers as More Dominant, Less Dominant, or Non-Comparable."};
+function findAnswer(q){q=q.toLowerCase();let best=null,score=0;for(const[k,v]of Object.entries(KB)){let s=0;for(const w of k.split(' '))if(q.includes(w))s++;if(s>score){score=s;best=v}}return score>0?best:"Not sure about that. Try asking about: dominance, sigma, beta, Sharpe, expected return, alpha, risk-free rate, data sources, or how to use SHAQ."}
+function sendChat(){const input=document.getElementById('chatInput'),msg=input.value.trim();if(!msg)return;const m=document.getElementById('chatMessages');const u=document.createElement('div');u.className='chat-msg user';u.textContent=msg;m.appendChild(u);const b=document.createElement('div');b.className='chat-msg bot';b.textContent=findAnswer(msg);m.appendChild(b);input.value='';m.scrollTop=m.scrollHeight}
+
+selectSector(0);
+</script>
+</body>
+</html>
